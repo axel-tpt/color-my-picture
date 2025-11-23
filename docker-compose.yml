@@ -1,0 +1,105 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: color-my-picture-db
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_DATABASE:-colormypicture}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Python Backend (FastAPI)
+  python-backend:
+    build:
+      context: ./color-my-picture-back-python
+      dockerfile: Dockerfile
+    container_name: color-my-picture-python
+    environment:
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "8081:8081"
+    volumes:
+      - python_temp:/app/temp
+      - python_rendered:/app/rendered
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8081/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # TypeScript Backend (NestJS)
+  typescript-backend:
+    build:
+      context: ./color-my-picture-back-ts
+      dockerfile: Dockerfile
+    container_name: color-my-picture-ts
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_DATABASE=${DB_DATABASE:-colormypicture}
+      - JWT_KEY=${JWT_KEY:-your-secret-jwt-key-change-in-production}
+      - API_URL=http://python-backend:8081
+    ports:
+      - "8080:8080"
+    volumes:
+      - ts_uploads:/app/uploads
+    networks:
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      python-backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Frontend (React/Vite with Nginx)
+  frontend:
+    build:
+      context: ./color-my-picture-front
+      dockerfile: Dockerfile
+    container_name: color-my-picture-front
+    ports:
+      - "3000:80"
+    networks:
+      - app-network
+    depends_on:
+      - typescript-backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  python_temp:
+    driver: local
+  python_rendered:
+    driver: local
+  ts_uploads:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
+

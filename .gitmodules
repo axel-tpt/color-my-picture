@@ -1,0 +1,9 @@
+[submodule "color-my-picture-front"]
+	path = color-my-picture-front
+	url = https://github.com/axel-tpt/color-my-picture-front.git
+[submodule "color-my-picture-back-ts"]
+	path = color-my-picture-back-ts
+	url = https://github.com/axel-tpt/color-my-picture-back-ts.git
+[submodule "color-my-picture-back-python"]
+	path = color-my-picture-back-python
+	url = https://github.com/axel-tpt/color-my-picture-back-python.git

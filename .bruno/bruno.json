@@ -1,0 +1,19 @@
+{
+    "version": "1",
+    "name": "Color My Picture APIs",
+    "type": "collection",
+    "apis": [
+        {
+            "name": "Back TS API",
+            "type": "openapi",
+            "url": "{{ env.back_ts_openapi }}"
+        },
+        {
+            "name": "Back Python API",
+            "type": "openapi",
+            "url": "{{ env.back_python_openapi }}"
+        }
+    ]
+}
+  
+  
